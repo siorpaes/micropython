@@ -107,6 +107,15 @@
 #define MICROPY_ALLOC_GC_STACK_SIZE (64)
 #endif
 
+// Be conservative and always clear to zero newly (re)allocated memory in the GC.
+// This helps eliminate stray pointers that hold on to memory that's no longer
+// used.  It decreases performance due to unnecessary memory clearing.
+// TODO Do analysis to understand why some memory is not properly cleared and
+// find a more efficient way to clear it.
+#ifndef MICROPY_GC_CONSERVATIVE_CLEAR
+#define MICROPY_GC_CONSERVATIVE_CLEAR (1)
+#endif
+
 // Support automatic GC when reaching allocation threshold,
 // configurable by gc.threshold().
 #ifndef MICROPY_GC_ALLOC_THRESHOLD
@@ -572,6 +581,11 @@ typedef double mp_float_t;
 #define MICROPY_USE_INTERNAL_ERRNO (0)
 #endif
 
+// Whether to use internally defined *printf() functions (otherwise external ones)
+#ifndef MICROPY_USE_INTERNAL_PRINTF
+#define MICROPY_USE_INTERNAL_PRINTF (1)
+#endif
+
 // Support for user-space VFS mount (selected ports)
 #ifndef MICROPY_FSUSERMOUNT
 #define MICROPY_FSUSERMOUNT (0)
@@ -609,6 +623,11 @@ typedef double mp_float_t;
 // Whether str.center() method provided
 #ifndef MICROPY_PY_BUILTINS_STR_CENTER
 #define MICROPY_PY_BUILTINS_STR_CENTER (0)
+#endif
+
+// Whether str.partition()/str.rpartition() method provided
+#ifndef MICROPY_PY_BUILTINS_STR_PARTITION
+#define MICROPY_PY_BUILTINS_STR_PARTITION (0)
 #endif
 
 // Whether str.splitlines() method provided
@@ -882,6 +901,11 @@ typedef double mp_float_t;
 #define MICROPY_PY_UBINASCII (0)
 #endif
 
+// Depends on MICROPY_PY_UZLIB
+#ifndef MICROPY_PY_UBINASCII_CRC32
+#define MICROPY_PY_UBINASCII_CRC32 (0)
+#endif
+
 #ifndef MICROPY_PY_URANDOM
 #define MICROPY_PY_URANDOM (0)
 #endif
@@ -902,6 +926,10 @@ typedef double mp_float_t;
 
 #ifndef MICROPY_PY_MACHINE_I2C
 #define MICROPY_PY_MACHINE_I2C (0)
+#endif
+
+#ifndef MICROPY_PY_MACHINE_SPI
+#define MICROPY_PY_MACHINE_SPI (0)
 #endif
 
 #ifndef MICROPY_PY_USSL
@@ -1066,6 +1094,11 @@ typedef double mp_float_t;
 // Modifier for functions which should be never inlined
 #ifndef MP_NOINLINE
 #define MP_NOINLINE __attribute__((noinline))
+#endif
+
+// Modifier for functions which should be always inlined
+#ifndef MP_ALWAYSINLINE
+#define MP_ALWAYSINLINE __attribute__((always_inline))
 #endif
 
 // Condition is likely to be true, to help branch prediction

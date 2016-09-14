@@ -9,6 +9,12 @@ Quick reference for the ESP8266
 
 The Adafruit Feather HUZZAH board (image attribution: Adafruit).
 
+Installing MicroPython
+----------------------
+
+See the corresponding section of tutorial: :ref:`intro`. It also includes
+a troubleshooting subsection.
+
 General board control
 ---------------------
 
@@ -17,14 +23,14 @@ Tab-completion is useful to find out what methods an object has.
 Paste mode (ctrl-E) is useful to paste a large slab of Python code into
 the REPL.
 
-The ``machine`` module::
+The :mod:`machine` module::
 
     import machine
 
     machine.freq()          # get the current frequency of the CPU
     machine.freq(160000000) # set the CPU frequency to 160 MHz
 
-The ``esp`` module::
+The :mod:`esp` module::
 
     import esp
 
@@ -34,7 +40,7 @@ The ``esp`` module::
 Networking
 ----------
 
-The ``network`` module::
+The :mod:`network` module::
 
     import network
 
@@ -63,13 +69,13 @@ A useful function for connecting to your local WiFi network is::
                 pass
         print('network config:', wlan.ifconfig())
 
-Once the network is established the ``socket`` module can be used
+Once the network is established the :mod:`socket <usocket>` module can be used
 to create and use TCP/UDP sockets as usual.
 
 Delay and timing
 ----------------
 
-Use the ``time`` module::
+Use the :mod:`time <utime>` module::
 
     import time
 
@@ -156,17 +162,18 @@ Use the ``machine.ADC`` class::
     adc = ADC(0)            # create ADC object on ADC pin
     adc.read()              # read value, 0-1024
 
-SPI bus
--------
+Software SPI bus
+----------------
 
-The SPI driver is implemented in software and works on all pins::
+There are two SPI drivers. One is implemented in software (bit-banging)
+and works on all pins::
 
     from machine import Pin, SPI
 
     # construct an SPI bus on the given pins
     # polarity is the idle state of SCK
     # phase=0 means sample on the first edge of SCK, phase=1 means the second
-    spi = SPI(baudrate=100000, polarity=1, phase=0, sck=Pin(0), mosi=Pin(2), miso=Pin(4))
+    spi = SPI(-1, baudrate=100000, polarity=1, phase=0, sck=Pin(0), mosi=Pin(2), miso=Pin(4))
 
     spi.init(baudrate=200000) # set the baudrate
 
@@ -182,6 +189,21 @@ The SPI driver is implemented in software and works on all pins::
     buf = bytearray(4)      # create a buffer
     spi.write_readinto(b'1234', buf) # write to MOSI and read from MISO into the buffer
     spi.write_readinto(buf, buf) # write buf to MOSI and read MISO back into buf
+
+
+Hardware SPI bus
+----------------
+
+The hardware SPI is faster (up to 80Mhz), but only works on following pins:
+``MISO`` is GPIO12, ``MOSI`` is GPIO13, and ``SCK`` is GPIO14. It has the same
+methods as the bitbanging SPI class above, except for the pin parameters for the
+constructor and init (as those are fixed)::
+
+    from machine import Pin, SPI
+
+    hspi = SPI(1, baudrate=80000000, polarity=0, phase=0)
+
+(``SPI(0)`` is used for FlashROM and not available to users.)
 
 I2C bus
 -------
@@ -233,15 +255,14 @@ The OneWire driver is implemented in software and works on all pins::
     ow.scan()               # return a list of devices on the bus
     ow.reset()              # reset the bus
     ow.readbyte()           # read a byte
-    ow.read(5)              # read 5 bytes
     ow.writebyte(0x12)      # write a byte on the bus
     ow.write('123')         # write bytes on the bus
     ow.select_rom(b'12345678') # select a specific device by its ROM code
 
-There is a specific driver for DS18B20 devices::
+There is a specific driver for DS18S20 and DS18B20 devices::
 
-    import time
-    ds = onewire.DS18B20(ow)
+    import time, ds18x20
+    ds = ds18x20.DS18X20(ow)
     roms = ds.scan()
     ds.convert_temp()
     time.sleep_ms(750)
@@ -290,6 +311,24 @@ For low-level driving of an APA102::
 
     import esp
     esp.apa102_write(clock_pin, data_pin, rgbi_buf)
+
+DHT driver
+----------
+
+The DHT driver is implemented in software and works on all pins::
+
+    import dht
+    import machine
+
+    d = dht.DHT11(machine.Pin(4))
+    d.measure()
+    d.temperature() # eg. 23 (°C)
+    d.humidity()    # eg. 41 (% RH)
+
+    d = dht.DHT22(machine.Pin(4))
+    d.measure()
+    d.temperature() # eg. 23.6 (°C)
+    d.humidity()    # eg. 41.3 (% RH)
 
 WebREPL (web browser interactive prompt)
 ----------------------------------------

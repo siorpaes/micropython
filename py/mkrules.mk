@@ -123,11 +123,12 @@ clean-prog:
 .PHONY: clean-prog
 endif
 
-lib: $(OBJ)
-	$(AR) rcs libmicropython.a $^
+LIBMICROPYTHON = libmicropython.a
+lib $(LIBMICROPYTHON): $(OBJ)
+	$(AR) rcs $(LIBMICROPYTHON) $^
 
 clean:
-	$(RM) -rf $(BUILD)
+	$(RM) -rf $(BUILD) $(CLEAN_EXTRA)
 .PHONY: clean
 
 print-cfg:
