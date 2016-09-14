@@ -345,6 +345,10 @@ STATIC uint update_reset_mode(uint reset_mode) {
 int main(void) {
     // TODO disable JTAG
 
+#ifdef DEBUG
+    /* Make sure DAP gets not disabled when we enter WFI */
+    *((uint32_t*)0xE0042004) = 0x00000027;
+#endif
     // Stack limit should be less than real stack size, so we have a chance
     // to recover from limit hit.  (Limit is measured in bytes.)
     mp_stack_ctrl_init();
