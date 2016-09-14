@@ -66,6 +66,13 @@ STATIC byte flash_cache_mem[0x4000] __attribute__((aligned(4))); // 16k
 #define FLASH_MEM_SEG1_START_ADDR (0x08004000) // sector 1
 #define FLASH_MEM_SEG1_NUM_BLOCKS (224) // sectors 1,2,3,4: 16k+16k+16k+64k=112k
 
+#elif defined(STM32F469xx)
+//daz: TODO check these settings are ok
+#define CACHE_MEM_START_ADDR (0x10000000) // CCM data RAM, 64k
+#define FLASH_SECTOR_SIZE_MAX (0x10000) // 64k max, size of CCM
+#define FLASH_MEM_SEG1_START_ADDR (0x08004000) // sector 1
+#define FLASH_MEM_SEG1_NUM_BLOCKS (224) // sectors 1,2,3,4: 16k+16k+16k+64k=112k
+
 #elif defined(STM32F439xx)
 
 #define CACHE_MEM_START_ADDR (0x10000000) // CCM data RAM, 64k

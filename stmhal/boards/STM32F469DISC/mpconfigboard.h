@@ -1,7 +1,7 @@
 #include STM32_HAL_H
 
-#define MICROPY_HW_BOARD_NAME       "F429I-DISCO"
-#define MICROPY_HW_MCU_NAME         "STM32F429"
+#define MICROPY_HW_BOARD_NAME       "F469I-DISCO"
+#define MICROPY_HW_MCU_NAME         "STM32F469"
 
 #define MICROPY_HW_HAS_SWITCH       (1)
 #define MICROPY_HW_HAS_FLASH        (1)
@@ -17,10 +17,10 @@
 #define MICROPY_HW_ENABLE_CAN       (1)
 
 // HSE is 8MHz
-#define MICROPY_HW_CLK_PLLM (8)
-#define MICROPY_HW_CLK_PLLN (336)
+#define MICROPY_HW_CLK_PLLM (4)
+#define MICROPY_HW_CLK_PLLN (72)
 #define MICROPY_HW_CLK_PLLP (RCC_PLLP_DIV2)
-#define MICROPY_HW_CLK_PLLQ (7)
+#define MICROPY_HW_CLK_PLLQ (3)
 
 // UART config
 #define MICROPY_HW_UART1_PORT (GPIOA)
