@@ -54,6 +54,7 @@
 // Printing debug to stderr may give tests which
 // check stdout a chance to pass, etc.
 #define MICROPY_DEBUG_PRINTER_DEST  mp_stderr_print
+#define MICROPY_READER_POSIX        (1)
 #define MICROPY_USE_READLINE_HISTORY (1)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_REPL_EMACS_KEYS     (1)
@@ -106,6 +107,7 @@
 
 #define MICROPY_PY_OS_STATVFS       (1)
 #define MICROPY_PY_UTIME            (1)
+#define MICROPY_PY_UTIME_MP_HAL     (1)
 #define MICROPY_PY_UERRNO           (1)
 #define MICROPY_PY_UCTYPES          (1)
 #define MICROPY_PY_UZLIB            (1)

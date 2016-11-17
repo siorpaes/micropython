@@ -38,6 +38,7 @@
 // options to control how Micro Python is built
 
 #define MICROPY_ALLOC_PATH_MAX                      (128)
+#define MICROPY_PERSISTENT_CODE_LOAD                (1)
 #define MICROPY_EMIT_THUMB                          (0)
 #define MICROPY_EMIT_INLINE_THUMB                   (0)
 #define MICROPY_COMP_MODULE_CONST                   (1)
@@ -54,6 +55,7 @@
 #define MICROPY_FLOAT_IMPL                          (MICROPY_FLOAT_IMPL_NONE)
 #define MICROPY_OPT_COMPUTED_GOTO                   (0)
 #define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE    (0)
+#define MICROPY_READER_FATFS                        (1)
 #ifndef DEBUG // we need ram on the launchxl while debugging
 #define MICROPY_CPYTHON_COMPAT                      (1)
 #else

@@ -5,19 +5,19 @@ QSTR_DEFS = qstrdefsport.h #$(BUILD)/pins_qstr.h
 
 MICROPY_PY_USSL = 1
 MICROPY_SSL_AXTLS = 1
+MICROPY_FATFS = 1
 MICROPY_PY_BTREE = 1
+
+FROZEN_DIR = scripts
+FROZEN_MPY_DIR = modules
 
 # include py core make definitions
 include ../py/py.mk
 
-MPY_CROSS = ../mpy-cross/mpy-cross
-MPY_TOOL = ../tools/mpy-tool.py
-MAKE_FROZEN = ../tools/make-frozen.py
-
-SCRIPTDIR = scripts
-FROZEN_MPY_DIR = modules
 PORT ?= /dev/ttyACM0
 BAUD ?= 115200
+FLASH_MODE ?= qio
+FLASH_SIZE ?= detect
 CROSS_COMPILE = xtensa-lx106-elf-
 ESP_SDK = $(shell $(CC) -print-sysroot)/usr
 
@@ -43,7 +43,8 @@ CFLAGS_XTENSA = -fsingle-precision-constant -Wdouble-promotion \
 CFLAGS = $(INC) -Wall -Wpointer-arith -Werror -ansi -std=gnu99 -nostdlib -DUART_OS=$(UART_OS) \
 	$(CFLAGS_XTENSA) $(CFLAGS_MOD) $(COPT) $(CFLAGS_EXTRA)
 
-LDFLAGS = -nostdlib -T esp8266.ld -Map=$(@:.elf=.map) --cref
+LDSCRIPT = esp8266.ld
+LDFLAGS = -nostdlib -T $(LDSCRIPT) -Map=$(@:.elf=.map) --cref
 LIBS = -L$(ESP_SDK)/lib -lmain -ljson -llwip_open -lpp -lnet80211 -lwpa -lphy -lnet80211 $(LDFLAGS_MOD)
 
 LIBGCC_FILE_NAME = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
@@ -64,6 +65,7 @@ SRC_C = \
 	main.c \
 	help.c \
 	esp_mphal.c \
+	esp_init_data.c \
 	gccollect.c \
 	lexerstr32.c \
 	uart.c \
@@ -73,22 +75,21 @@ SRC_C = \
 	espapa102.c \
 	intr.c \
 	modpyb.c \
-	modpybpin.c \
-	modpybpwm.c \
-	modpybrtc.c \
-	modpybadc.c \
-	modpybuart.c \
-	modmachinewdt.c \
-	modpybspi.c \
-	modpybhspi.c \
+	modmachine.c \
+	machine_pin.c \
+	machine_pwm.c \
+	machine_rtc.c \
+	machine_adc.c \
+	machine_uart.c \
+	machine_wdt.c \
+	machine_spi.c \
+	machine_hspi.c \
 	modesp.c \
 	modnetwork.c \
 	modutime.c \
 	moduos.c \
-	modmachine.c \
 	modonewire.c \
 	ets_alt_task.c \
-	$(BUILD)/frozen.c \
 	fatfs_port.c \
 	axtls_helpers.c \
 	hspi.c \
@@ -128,9 +129,14 @@ LIB_SRC_C = $(addprefix lib/,\
 	timeutils/timeutils.c \
 	utils/pyexec.c \
 	utils/pyhelp.c \
-	fatfs/ff.c \
-	fatfs/option/ccsbcs.c \
+	utils/interrupt_char.c \
 	)
+
+ifeq ($(MICROPY_FATFS), 1)
+LIB_SRC_C += \
+	lib/fatfs/ff.c \
+	lib/fatfs/option/ccsbcs.c
+endif
 
 DRIVERS_SRC_C = $(addprefix drivers/,\
 	dht/dht.c \
@@ -138,9 +144,6 @@ DRIVERS_SRC_C = $(addprefix drivers/,\
 
 SRC_S = \
 	gchelper.s \
-
-FROZEN_MPY_PY_FILES := $(shell find -L $(FROZEN_MPY_DIR) -type f -name '*.py')
-FROZEN_MPY_MPY_FILES := $(addprefix $(BUILD)/,$(FROZEN_MPY_PY_FILES:.py=.mpy))
 
 OBJ =
 OBJ += $(PY_O)
@@ -150,7 +153,6 @@ OBJ += $(addprefix $(BUILD)/, $(STM_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(EXTMOD_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(LIB_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(DRIVERS_SRC_C:.c=.o))
-OBJ += $(BUILD)/$(BUILD)/frozen_mpy.o
 #OBJ += $(BUILD)/pins_$(BOARD).o
 
 # List of sources for qstr extraction
@@ -164,34 +166,20 @@ CONFVARS_FILE = $(BUILD)/confvars
 
 ifeq ($(wildcard $(CONFVARS_FILE)),)
 $(shell $(MKDIR) -p $(BUILD))
-$(shell echo $(SCRIPTDIR) $(UART_OS) > $(CONFVARS_FILE))
-else ifneq ($(shell cat $(CONFVARS_FILE)), $(SCRIPTDIR) $(UART_OS))
-$(shell echo $(SCRIPTDIR) $(UART_OS) > $(CONFVARS_FILE))
+$(shell echo $(FROZEN_DIR) $(UART_OS) > $(CONFVARS_FILE))
+else ifneq ($(shell cat $(CONFVARS_FILE)), $(FROZEN_DIR) $(UART_OS))
+$(shell echo $(FROZEN_DIR) $(UART_OS) > $(CONFVARS_FILE))
 endif
 
 $(BUILD)/uart.o: $(CONFVARS_FILE)
 
-$(BUILD)/frozen.c: $(wildcard $(SCRIPTDIR)/*) $(CONFVARS_FILE)
-	$(ECHO) "Generating $@"
-	$(Q)$(MAKE_FROZEN) $(SCRIPTDIR) > $@
-
-# to build .mpy files from .py files
-$(BUILD)/$(FROZEN_MPY_DIR)/%.mpy: $(FROZEN_MPY_DIR)/%.py
-	@$(ECHO) "MPY $<"
-	$(Q)$(MKDIR) -p $(dir $@)
-	$(Q)$(MPY_CROSS) -o $@ -s $(^:$(FROZEN_MPY_DIR)/%=%) $^
-
-# to build frozen_mpy.c from all .mpy files
-$(BUILD)/frozen_mpy.c: $(FROZEN_MPY_MPY_FILES) $(BUILD)/genhdr/qstrdefs.generated.h
-	@$(ECHO) "Creating $@"
-	$(Q)$(PYTHON) $(MPY_TOOL) -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h $(FROZEN_MPY_MPY_FILES) > $@
+FROZEN_EXTRA_DEPS = $(CONFVARS_FILE)
 
 .PHONY: deploy
 
 deploy: $(BUILD)/firmware-combined.bin
 	$(ECHO) "Writing $< to the board"
-	$(Q)esptool.py --port $(PORT) --baud $(BAUD) write_flash --verify --flash_size=8m 0 $<
-	#$(Q)esptool.py --port $(PORT) --baud $(BAUD) write_flash --flash_size=8m 0 $(BUILD)/firmware.elf-0x00000.bin 0x9000 $(BUILD)/firmware.elf-0x0[1-f]000.bin
+	$(Q)esptool.py --port $(PORT) --baud $(BAUD) write_flash --verify --flash_size=$(FLASH_SIZE) --flash_mode=$(FLASH_MODE) 0 $<
 
 reset:
 	echo -e "\r\nimport machine; machine.reset()\r\n" >$(PORT)
@@ -205,6 +193,9 @@ $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
 	$(Q)$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 	$(Q)$(SIZE) $@
+
+512k:
+	$(MAKE) LDSCRIPT=esp8266_512k.ld CFLAGS_EXTRA='-DMP_CONFIGFILE="<mpconfigport_512k.h>"' MICROPY_FATFS=0 MICROPY_PY_BTREE=0
 
 #MAKE_PINS = boards/make-pins.py
 #BOARD_PINS = boards/$(BOARD)/pins.csv

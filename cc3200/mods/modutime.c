@@ -29,7 +29,7 @@
 #include <string.h>
 
 #include "py/mpconfig.h"
-#include "py/nlr.h"
+#include "py/runtime.h"
 #include "py/obj.h"
 #include "py/smallint.h"
 #include "py/mphal.h"
@@ -109,7 +109,7 @@ STATIC mp_obj_t time_mktime(mp_obj_t tuple) {
 
     // localtime generates a tuple of len 8. CPython uses 9, so we accept both.
     if (len < 8 || len > 9) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, mpexception_num_type_invalid_arguments));
+        mp_raise_TypeError(mpexception_num_type_invalid_arguments);
     }
 
     return mp_obj_new_int_from_uint(timeutils_mktime(mp_obj_get_int(elem[0]), mp_obj_get_int(elem[1]), mp_obj_get_int(elem[2]),
@@ -196,6 +196,5 @@ STATIC MP_DEFINE_CONST_DICT(time_module_globals, time_module_globals_table);
 
 const mp_obj_module_t mp_module_utime = {
     .base = { &mp_type_module },
-    .name = MP_QSTR_utime,
     .globals = (mp_obj_dict_t*)&time_module_globals,
 };

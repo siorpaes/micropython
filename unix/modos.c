@@ -37,23 +37,20 @@
 #include "py/nlr.h"
 #include "py/runtime.h"
 #include "py/objtuple.h"
+#include "py/mphal.h"
 #include "extmod/misc.h"
 
 // Can't include this, as FATFS structure definition is required,
 // and FatFs header defining it conflicts with POSIX.
 //#include "extmod/fsusermount.h"
-MP_DECLARE_CONST_FUN_OBJ(fsuser_mount_obj);
-MP_DECLARE_CONST_FUN_OBJ(fsuser_umount_obj);
-MP_DECLARE_CONST_FUN_OBJ(fsuser_mkfs_obj);
+MP_DECLARE_CONST_FUN_OBJ_KW(fsuser_mount_obj);
+MP_DECLARE_CONST_FUN_OBJ_1(fsuser_umount_obj);
+MP_DECLARE_CONST_FUN_OBJ_KW(fsuser_mkfs_obj);
 extern const mp_obj_type_t mp_fat_vfs_type;
 
 #ifdef __ANDROID__
 #define USE_STATFS 1
 #endif
-
-#define RAISE_ERRNO(err_flag, error_val) \
-    { if (err_flag == -1) \
-        { nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError, MP_OBJ_NEW_SMALL_INT(error_val))); } }
 
 STATIC mp_obj_t mod_os_stat(mp_obj_t path_in) {
     struct stat sb;
@@ -253,6 +250,5 @@ STATIC MP_DEFINE_CONST_DICT(mp_module_os_globals, mp_module_os_globals_table);
 
 const mp_obj_module_t mp_module_os = {
     .base = { &mp_type_module },
-    .name = MP_QSTR_uos,
     .globals = (mp_obj_dict_t*)&mp_module_os_globals,
 };

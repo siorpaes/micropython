@@ -39,7 +39,7 @@
 #include "gccollect.h"
 #include "user_interface.h"
 
-STATIC char heap[28 * 1024];
+STATIC char heap[36 * 1024];
 
 STATIC void mp_reset(void) {
     mp_stack_set_top((void*)0x40000000);
@@ -49,8 +49,8 @@ STATIC void mp_reset(void) {
     mp_init();
     mp_obj_list_init(mp_sys_path, 0);
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_)); // current dir (or base dir of the script)
-    mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_));
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_lib));
+    mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_));
     mp_obj_list_init(mp_sys_argv, 0);
     #if MICROPY_VFS_FAT
     memset(MP_STATE_PORT(fs_user_mount), 0, sizeof(MP_STATE_PORT(fs_user_mount)));
@@ -109,17 +109,13 @@ void user_init(void) {
     system_init_done_cb(init_done);
 }
 
-mp_lexer_t *fat_vfs_lexer_new_from_file(const char *filename);
 mp_import_stat_t fat_vfs_import_stat(const char *path);
 
+#if !MICROPY_VFS_FAT
 mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
-    #if MICROPY_VFS_FAT
-    return fat_vfs_lexer_new_from_file(filename);
-    #else
-    (void)filename;
     return NULL;
-    #endif
 }
+#endif
 
 mp_import_stat_t mp_import_stat(const char *path) {
     #if MICROPY_VFS_FAT
@@ -141,11 +137,7 @@ mp_obj_t mp_builtin_open(uint n_args, const mp_obj_t *args, mp_map_t *kwargs) {
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
-void mp_keyboard_interrupt(void) {
-    MP_STATE_VM(mp_pending_exception) = MP_STATE_PORT(mp_kbd_exception);
-}
-
-void nlr_jump_fail(void *val) {
+void MP_FASTCODE(nlr_jump_fail)(void *val) {
     printf("NLR jump failed\n");
     for (;;) {
     }

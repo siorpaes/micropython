@@ -45,8 +45,7 @@
 #include "mem.h"
 #include "espneopixel.h"
 #include "espapa102.h"
-#include "modpyb.h"
-#include "modpybrtc.h"
+#include "modmachine.h"
 
 #define MODESP_ESPCONN (0)
 
@@ -583,7 +582,7 @@ STATIC mp_obj_t esp_flash_read(mp_obj_t offset_in, mp_obj_t len_or_buf_in) {
     if (alloc_buf) {
         m_del(byte, buf, len);
     }
-    nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError, MP_OBJ_NEW_SMALL_INT(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO)));
+    mp_raise_OSError(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(esp_flash_read_obj, esp_flash_read);
 
@@ -598,9 +597,7 @@ STATIC mp_obj_t esp_flash_write(mp_obj_t offset_in, const mp_obj_t buf_in) {
     if (res == SPI_FLASH_RESULT_OK) {
         return mp_const_none;
     }
-    nlr_raise(mp_obj_new_exception_arg1(
-        &mp_type_OSError,
-        MP_OBJ_NEW_SMALL_INT(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO)));
+    mp_raise_OSError(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(esp_flash_write_obj, esp_flash_write);
 
@@ -610,9 +607,7 @@ STATIC mp_obj_t esp_flash_erase(mp_obj_t sector_in) {
     if (res == SPI_FLASH_RESULT_OK) {
         return mp_const_none;
     }
-    nlr_raise(mp_obj_new_exception_arg1(
-        &mp_type_OSError,
-        MP_OBJ_NEW_SMALL_INT(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO)));
+    mp_raise_OSError(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp_flash_erase_obj, esp_flash_erase);
 
@@ -632,6 +627,11 @@ STATIC mp_obj_t esp_flash_size(void) {
     return mp_obj_new_int_from_uint(flash->chip_size);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(esp_flash_size_obj, esp_flash_size);
+
+STATIC mp_obj_t esp_flash_user_start(void) {
+    return MP_OBJ_NEW_SMALL_INT(0x90000);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(esp_flash_user_start_obj, esp_flash_user_start);
 
 STATIC mp_obj_t esp_check_fw(void) {
     MD5_CTX ctx;
@@ -710,11 +710,14 @@ STATIC const mp_map_elem_t esp_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_flash_write), (mp_obj_t)&esp_flash_write_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flash_erase), (mp_obj_t)&esp_flash_erase_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flash_size), (mp_obj_t)&esp_flash_size_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_flash_user_start), (mp_obj_t)&esp_flash_user_start_obj },
     #if MODESP_ESPCONN
     { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&esp_socket_type },
     { MP_OBJ_NEW_QSTR(MP_QSTR_getaddrinfo), (mp_obj_t)&esp_getaddrinfo_obj },
     #endif
+    #if MICROPY_ESP8266_NEOPIXEL
     { MP_OBJ_NEW_QSTR(MP_QSTR_neopixel_write), (mp_obj_t)&esp_neopixel_write_obj },
+    #endif
     #if MICROPY_ESP8266_APA102
     { MP_OBJ_NEW_QSTR(MP_QSTR_apa102_write), (mp_obj_t)&esp_apa102_write_obj },
     #endif
@@ -748,6 +751,5 @@ STATIC MP_DEFINE_CONST_DICT(esp_module_globals, esp_module_globals_table);
 
 const mp_obj_module_t esp_module = {
     .base = { &mp_type_module },
-    .name = MP_QSTR_esp,
     .globals = (mp_obj_dict_t*)&esp_module_globals,
 };

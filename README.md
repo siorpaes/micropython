@@ -1,12 +1,8 @@
-[![Build Status][travis-img]][travis-repo] [![Coverage Status][coveralls-img]][coveralls-repo] [![Issue Stats][istats-pr-img]][istats-pr-repo] [![Issue Stats][istats-issue-img]][istats-issue-repo]
+[![Build Status][travis-img]][travis-repo] [![Coverage Status][coveralls-img]][coveralls-repo]
 [travis-img]:  https://travis-ci.org/micropython/micropython.png?branch=master
 [travis-repo]: https://travis-ci.org/micropython/micropython
 [coveralls-img]:  https://coveralls.io/repos/micropython/micropython/badge.png?branch=master
 [coveralls-repo]: https://coveralls.io/r/micropython/micropython?branch=master
-[istats-pr-img]: http://issuestats.com/github/micropython/micropython/badge/pr
-[istats-pr-repo]: http://issuestats.com/github/micropython/micropython
-[istats-issue-img]: http://issuestats.com/github/micropython/micropython/badge/issue
-[istats-issue-repo]: http://issuestats.com/github/micropython/micropython
 
 The MicroPython project
 =======================
@@ -26,18 +22,19 @@ MicroPython implements the entire Python 3.4 syntax (including exceptions,
 The following core datatypes are provided: str (including basic Unicode
 support), bytes, bytearray, tuple, list, dict, set, frozenset, array.array,
 collections.namedtuple, classes and instances. Builtin modules include sys,
-time, and struct.  Note that only subset of Python 3.4 functionality
+time, and struct, etc. Select ports have support for _thread module
+(multithreading). Note that only subset of Python 3.4 functionality
 implemented for the data types and modules.
 
-See the repository www.github.com/micropython/pyboard for the Micro
-Python board, the officially supported reference electronic circuit board.
+See the repository www.github.com/micropython/pyboard for the MicroPython
+board (PyBoard), the officially supported reference electronic circuit board.
 
 Major components in this repository:
 - py/ -- the core Python implementation, including compiler, runtime, and
   core library.
 - unix/ -- a version of MicroPython that runs on Unix.
-- stmhal/ -- a version of MicroPython that runs on the MicroPython board
-  with an STM32F405RG (using ST's Cube HAL drivers).
+- stmhal/ -- a version of MicroPython that runs on the PyBoard and similar
+  STM32 boards (using ST's Cube HAL drivers).
 - minimal/ -- a minimal MicroPython port. Start with this if you want
   to port MicroPython to another microcontroller.
 - tests/ -- test framework and test scripts.

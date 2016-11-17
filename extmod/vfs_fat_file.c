@@ -35,6 +35,7 @@
 #include "py/nlr.h"
 #include "py/runtime.h"
 #include "py/stream.h"
+#include "py/mperrno.h"
 #include "lib/fatfs/ff.h"
 #include "extmod/vfs_fat_file.h"
 
@@ -49,25 +50,25 @@ extern const mp_obj_type_t mp_type_textio;
 // this table converts from FRESULT to POSIX errno
 const byte fresult_to_errno_table[20] = {
     [FR_OK] = 0,
-    [FR_DISK_ERR] = EIO,
-    [FR_INT_ERR] = EIO,
-    [FR_NOT_READY] = EBUSY,
-    [FR_NO_FILE] = ENOENT,
-    [FR_NO_PATH] = ENOENT,
-    [FR_INVALID_NAME] = EINVAL,
-    [FR_DENIED] = EACCES,
-    [FR_EXIST] = EEXIST,
-    [FR_INVALID_OBJECT] = EINVAL,
-    [FR_WRITE_PROTECTED] = EROFS,
-    [FR_INVALID_DRIVE] = ENODEV,
-    [FR_NOT_ENABLED] = ENODEV,
-    [FR_NO_FILESYSTEM] = ENODEV,
-    [FR_MKFS_ABORTED] = EIO,
-    [FR_TIMEOUT] = EIO,
-    [FR_LOCKED] = EIO,
-    [FR_NOT_ENOUGH_CORE] = ENOMEM,
-    [FR_TOO_MANY_OPEN_FILES] = EMFILE,
-    [FR_INVALID_PARAMETER] = EINVAL,
+    [FR_DISK_ERR] = MP_EIO,
+    [FR_INT_ERR] = MP_EIO,
+    [FR_NOT_READY] = MP_EBUSY,
+    [FR_NO_FILE] = MP_ENOENT,
+    [FR_NO_PATH] = MP_ENOENT,
+    [FR_INVALID_NAME] = MP_EINVAL,
+    [FR_DENIED] = MP_EACCES,
+    [FR_EXIST] = MP_EEXIST,
+    [FR_INVALID_OBJECT] = MP_EINVAL,
+    [FR_WRITE_PROTECTED] = MP_EROFS,
+    [FR_INVALID_DRIVE] = MP_ENODEV,
+    [FR_NOT_ENABLED] = MP_ENODEV,
+    [FR_NO_FILESYSTEM] = MP_ENODEV,
+    [FR_MKFS_ABORTED] = MP_EIO,
+    [FR_TIMEOUT] = MP_EIO,
+    [FR_LOCKED] = MP_EIO,
+    [FR_NOT_ENOUGH_CORE] = MP_ENOMEM,
+    [FR_TOO_MANY_OPEN_FILES] = MP_EMFILE,
+    [FR_INVALID_PARAMETER] = MP_EINVAL,
 };
 
 typedef struct _pyb_file_obj_t {
@@ -101,7 +102,7 @@ STATIC mp_uint_t file_obj_write(mp_obj_t self_in, const void *buf, mp_uint_t siz
     }
     if (sz_out != size) {
         // The FatFS documentation says that this means disk full.
-        *errcode = ENOSPC;
+        *errcode = MP_ENOSPC;
         return MP_STREAM_ERROR;
     }
     return sz_out;
@@ -109,14 +110,23 @@ STATIC mp_uint_t file_obj_write(mp_obj_t self_in, const void *buf, mp_uint_t siz
 
 STATIC mp_obj_t file_obj_flush(mp_obj_t self_in) {
     pyb_file_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    f_sync(&self->fp);
+    FRESULT res = f_sync(&self->fp);
+    if (res != FR_OK) {
+        mp_raise_OSError(fresult_to_errno_table[res]);
+    }
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(file_obj_flush_obj, file_obj_flush);
 
 STATIC mp_obj_t file_obj_close(mp_obj_t self_in) {
     pyb_file_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    f_close(&self->fp);
+    // if fs==NULL then the file is closed and in that case this method is a no-op
+    if (self->fp.fs != NULL) {
+        FRESULT res = f_close(&self->fp);
+        if (res != FR_OK) {
+            mp_raise_OSError(fresult_to_errno_table[res]);
+        }
+    }
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(file_obj_close_obj, file_obj_close);
@@ -140,7 +150,7 @@ STATIC mp_uint_t file_obj_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t arg,
 
             case 1: // SEEK_CUR
                 if (s->offset != 0) {
-                    *errcode = ENOTSUP;
+                    *errcode = MP_EOPNOTSUPP;
                     return MP_STREAM_ERROR;
                 }
                 // no-operation
@@ -155,7 +165,7 @@ STATIC mp_uint_t file_obj_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t arg,
         return 0;
 
     } else {
-        *errcode = EINVAL;
+        *errcode = MP_EINVAL;
         return MP_STREAM_ERROR;
     }
 }
@@ -208,7 +218,7 @@ STATIC mp_obj_t file_open(const mp_obj_type_t *type, mp_arg_val_t *args) {
     FRESULT res = f_open(&o->fp, fname, mode);
     if (res != FR_OK) {
         m_del_obj(pyb_file_obj_t, o);
-        nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError, MP_OBJ_NEW_SMALL_INT(fresult_to_errno_table[res])));
+        mp_raise_OSError(fresult_to_errno_table[res]);
     }
 
     // for 'a' mode, we must begin at the end of the file
@@ -229,7 +239,6 @@ STATIC mp_obj_t file_obj_make_new(const mp_obj_type_t *type, size_t n_args, size
 
 STATIC const mp_rom_map_elem_t rawfile_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_stream_read_obj) },
-    { MP_ROM_QSTR(MP_QSTR_readall), MP_ROM_PTR(&mp_stream_readall_obj) },
     { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
     { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
     { MP_ROM_QSTR(MP_QSTR_readlines), MP_ROM_PTR(&mp_stream_unbuffered_readlines_obj) },

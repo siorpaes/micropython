@@ -56,7 +56,7 @@ STATIC mp_obj_ssl_socket_t *socket_new(mp_obj_t sock, bool server_side) {
 
     uint32_t options = SSL_SERVER_VERIFY_LATER;
     if ((o->ssl_ctx = ssl_ctx_new(options, SSL_DEFAULT_CLNT_SESS)) == NULL) {
-        nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError, MP_OBJ_NEW_SMALL_INT(EINVAL)));
+        mp_raise_OSError(MP_EINVAL);
     }
 
     if (server_side) {
@@ -69,7 +69,7 @@ STATIC mp_obj_ssl_socket_t *socket_new(mp_obj_t sock, bool server_side) {
         if ((res = ssl_handshake_status(o->ssl_sock)) != SSL_OK) {
             printf("ssl_handshake_status: %d\n", res);
             ssl_display_error(res);
-            nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError, MP_OBJ_NEW_SMALL_INT(EIO)));
+            mp_raise_OSError(MP_EIO);
         }
     }
 
@@ -142,7 +142,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_close_obj, socket_close);
 
 STATIC const mp_rom_map_elem_t ussl_socket_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_stream_read_obj) },
-    { MP_ROM_QSTR(MP_QSTR_readall), MP_ROM_PTR(&mp_stream_readall_obj) },
     { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
     { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
     { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
@@ -196,7 +195,6 @@ STATIC MP_DEFINE_CONST_DICT(mp_module_ssl_globals, mp_module_ssl_globals_table);
 
 const mp_obj_module_t mp_module_ussl = {
     .base = { &mp_type_module },
-    .name = MP_QSTR_ussl,
     .globals = (mp_obj_dict_t*)&mp_module_ssl_globals,
 };
 

@@ -130,7 +130,7 @@ STATIC mp_obj_t machine_main(mp_obj_t main) {
     if (MP_OBJ_IS_STR(main)) {
         MP_STATE_PORT(machine_config_main) = main;
     } else {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, mpexception_value_invalid_arguments));
+        mp_raise_ValueError(mpexception_value_invalid_arguments);
     }
     return mp_const_none;
 }
@@ -213,6 +213,5 @@ STATIC MP_DEFINE_CONST_DICT(machine_module_globals, machine_module_globals_table
 
 const mp_obj_module_t machine_module = {
     .base = { &mp_type_module },
-    .name = MP_QSTR_umachine,
     .globals = (mp_obj_dict_t*)&machine_module_globals,
 };

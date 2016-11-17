@@ -23,10 +23,8 @@
 #define MICROPY_HW_CLK_PLLQ (7)
 
 // UART config
-#if MICROPY_HW_HAS_SWITCH == 0
 #define MICROPY_HW_UART1_PORT (GPIOB)
 #define MICROPY_HW_UART1_PINS (GPIO_PIN_6 | GPIO_PIN_7)
-#endif
 
 #define MICROPY_HW_UART2_PORT (GPIOA)
 #define MICROPY_HW_UART2_PINS (GPIO_PIN_2 | GPIO_PIN_3)
@@ -50,8 +48,8 @@
 #define MICROPY_HW_UART6_PINS (GPIO_PIN_6 | GPIO_PIN_7)
 
 // I2C busses
-#define MICROPY_HW_I2C1_SCL (pin_B6)
-#define MICROPY_HW_I2C1_SDA (pin_B7)
+#define MICROPY_HW_I2C1_SCL (pin_B8)
+#define MICROPY_HW_I2C1_SDA (pin_B9)
 #define MICROPY_HW_I2C2_SCL (pin_B10)
 #define MICROPY_HW_I2C2_SDA (pin_B11)
 
@@ -73,9 +71,8 @@
 
 // LEDs
 #define MICROPY_HW_LED1             (pin_C13)
-#define MICROPY_HW_LED_OTYPE        (GPIO_MODE_OUTPUT_PP)
-#define MICROPY_HW_LED_ON(pin)      (pin->gpio->BSRRH = pin->pin_mask)
-#define MICROPY_HW_LED_OFF(pin)     (pin->gpio->BSRRL = pin->pin_mask)
+#define MICROPY_HW_LED_ON(pin)      (mp_hal_pin_low(pin))
+#define MICROPY_HW_LED_OFF(pin)     (mp_hal_pin_high(pin))
 
 // SD card detect switch
 #define MICROPY_HW_SDCARD_DETECT_PIN        (pin_C11)

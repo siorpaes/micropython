@@ -101,7 +101,7 @@ STATIC mp_obj_t network_server_make_new(const mp_obj_type_t *type, mp_uint_t n_a
     // check the server id
     if (args[0].u_obj != MP_OBJ_NULL) {
         if (mp_obj_get_int(args[0].u_obj) != 0) {
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, mpexception_os_resource_not_avaliable));
+            mp_raise_msg(&mp_type_OSError, mpexception_os_resource_not_avaliable);
         }
     }
 
@@ -161,7 +161,6 @@ STATIC MP_DEFINE_CONST_DICT(mp_module_network_globals, mp_module_network_globals
 
 const mp_obj_module_t mp_module_network = {
     .base = { &mp_type_module },
-    .name = MP_QSTR_network,
     .globals = (mp_obj_dict_t*)&mp_module_network_globals,
 };
 

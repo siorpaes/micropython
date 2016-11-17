@@ -280,7 +280,7 @@ STATIC void UARTGenericIntHandler(uint32_t uart_id) {
 STATIC void uart_check_init(pyb_uart_obj_t *self) {
     // not initialized
     if (!self->baudrate) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, mpexception_os_request_not_possible));
+        mp_raise_msg(&mp_type_OSError, mpexception_os_request_not_possible);
     }
 }
 
@@ -432,7 +432,7 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, const mp_arg_val_t *a
     return mp_const_none;
 
 error:
-    nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, mpexception_value_invalid_arguments));
+    mp_raise_ValueError(mpexception_value_invalid_arguments);
 }
 
 STATIC const mp_arg_t pyb_uart_init_args[] = {
@@ -472,7 +472,7 @@ STATIC mp_obj_t pyb_uart_make_new(const mp_obj_type_t *type, mp_uint_t n_args, m
     }
 
     if (uart_id > PYB_UART_1) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, mpexception_os_resource_not_avaliable));
+        mp_raise_msg(&mp_type_OSError, mpexception_os_resource_not_avaliable);
     }
 
     // get the correct uart instance
@@ -556,7 +556,7 @@ STATIC mp_obj_t pyb_uart_irq (mp_uint_t n_args, const mp_obj_t *pos_args, mp_map
     return uart_irq_new (self, trigger, priority, args[2].u_obj);
 
 invalid_args:
-    nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, mpexception_value_invalid_arguments));
+    mp_raise_ValueError(mpexception_value_invalid_arguments);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_uart_irq_obj, 1, pyb_uart_irq);
 
@@ -570,8 +570,6 @@ STATIC const mp_map_elem_t pyb_uart_locals_dict_table[] = {
 
     /// \method read([nbytes])
     { MP_OBJ_NEW_QSTR(MP_QSTR_read),        (mp_obj_t)&mp_stream_read_obj },
-    /// \method readall()
-    { MP_OBJ_NEW_QSTR(MP_QSTR_readall),     (mp_obj_t)&mp_stream_readall_obj },
     /// \method readline()
     { MP_OBJ_NEW_QSTR(MP_QSTR_readline),    (mp_obj_t)&mp_stream_unbuffered_readline_obj},
     /// \method readinto(buf[, nbytes])
@@ -622,7 +620,7 @@ STATIC mp_uint_t pyb_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t 
 
     // write the data
     if (!uart_tx_strn(self, buf, size)) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, mpexception_os_operation_failed));
+        mp_raise_msg(&mp_type_OSError, mpexception_os_operation_failed);
     }
     return size;
 }
